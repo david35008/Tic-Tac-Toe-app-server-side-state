@@ -7,6 +7,19 @@ app.use(express.json());
 
 app.use('/', express.static('../client/build'));
 
+let historyMoves = {
+    squares: Array(9).fill(null)
+};
+
+app.get("/api/history", (req, res)=> {
+    res.send(historyMoves);
+});
+
+app.post("/api/history", (req, res)=> {
+    historyMoves = req.body
+    res.send(historyMoves);
+});
+
 app.get("/api/records", async (req, res) => {
     const content = await fs.readFile('./records.json')
     const json = JSON.parse(content);
@@ -31,8 +44,5 @@ app.delete("/api/records", async (req,res) => {
 app.get('/', (req, res) => {
     res.send('hello');
 });
-
-
-
 
 app.listen(8080);
