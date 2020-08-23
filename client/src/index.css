@@ -1,10 +1,10 @@
 body {
-  font: 14px "Century Gothic", Futura, sans-serif;
-  margin: 20px;
-}
-
-ol, ul {
-  padding-left: 30px;
+ background-color: wheat;
+ text-align: center;
+ display: flex;
+ flex-direction: column;
+ justify-content: center;
+ align-content: center;
 }
 
 .board-row:after {
@@ -13,23 +13,19 @@ ol, ul {
   display: table;
 }
 
-.status {
-  margin-bottom: 10px;
-}
-
 .square {
   background: #fff;
   border: 1px solid #999;
-  float: left;
-  font-size: 24px;
+  font-size: 80px;
   font-weight: bold;
-  line-height: 34px;
-  height: 34px;
-  margin-right: -1px;
-  margin-top: -1px;
-  padding: 0;
+  line-height: 10px;
+  height: 80px;
+  width: 80px;
+  float: none;
+  padding: 0px;
+  padding-bottom: 24px;
+  text-align: 0px;
   text-align: center;
-  width: 34px;
 }
 
 .square:focus {
@@ -41,12 +37,42 @@ ol, ul {
 }
 
 .game {
-  display: flex;
-  flex-direction: row;
+  
+  /* flex-direction: column; */
+  /* justify-content: space-around; */
+  
 }
 
-.game-info {
-  margin-left: 20px;
+.game-area {
+  display: flex;
+  justify-content: space-around;
+  /* width: 80%; */
+  /* margin: 0px auto 0px auto; */
+}
+
+.game-board {
+margin-right: 95px;
+min-width: 240px;
+} 
+/* .game-info {
+  margin: auto;
+} */
+
+.winnerList {
+  text-align: left;
+  min-width: 175px;
+}
+
+.status {
+  border: 1px solid #000;
+  width: 19%;
+  margin: 5px auto 0px auto;
+  font-size: 20px;
+  background-color: lightcyan;
+}
+
+ol {
+  list-style: none;
 }
 
 .modal {

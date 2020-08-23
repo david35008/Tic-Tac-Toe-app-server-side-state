@@ -3,7 +3,8 @@ import Board from './Board';
 import './index.css';
 import axios from 'axios';
 import Modal from '@material-ui/core/Modal';
-import CountTime from './CountTime'
+import CountTime from './CountTime';
+import WinnersList from "./WinnersList";
 
 function App(props) {
 
@@ -11,91 +12,142 @@ function App(props) {
     const [appearance, setAppearance] = useState(false);
     const [stepNumber, setStepNumber] = useState(0);
     const [xIsNext, setXIsNext] = useState(true);
-    const [winnersListAppears, setWinnersListAppears] = useState('');
+    const [winnersList, setWinnersList] = useState(<li>helloe world</li>);
     const [boardHistory, setBoardHistory] = useState([{ squares: Array(9).fill(null) }]);
     const [seconds, setSeconds] = useState(0);
     const [isActive, setIsActive] = useState(false);
-
-    useEffect(() => {
-        if (winner) {
-            setIsActive(false);
-            setAppearance(true);
-        }
-    });
-
-    useEffect(async () => {
-        let afterChangeRecordsList = await axios.get('/api/records')
-            .then(res => res.data)
-            .catch(error => error);
-        let recordsListContainer = [];
-        afterChangeRecordsList.forEach(element => {
-            recordsListContainer.push(
-                <li>
-                    <div>name: {element.winnerName}</div>
-                    <div>date: {element.date}</div>
-                    <div>Game duration: {element.gameDuration}s</div>
-                </li>
-            )
-        });
-        setWinnersListAppears(recordsListContainer)
-    }, []);
-    let current = boardHistory[stepNumber];
-
-    useEffect(() => {
-        const fetchData = async () => {
-            const result = await axios.get(`/api/history`);
-            
-                try {
-                    setBoardHistory(result.data.boardHistory);
-                    setStepNumber(result.data.stepNumber)
-                    setXIsNext(result.data.xIsNext)
-                } catch (err) {
-                    console.log(`No history ! ${err}`);
-                }
-            
-        };
-        fetchData();
-    }, []);
-
-    useEffect(() => {
-        setTimeout(()=> {
-            const fetchData = async () => {
-                const result = await axios.get(`/api/history`);
-                debugger
-                
-                    
-                    try {
-                        // if (result.data.stepNumber!==stepNumber) {
-                        // setSeconds(result.data.seconds)}
-                        setIsActive(true)
-                        setBoardHistory(result.data.boardHistory);
-                        setStepNumber(result.data.stepNumber)
-                        setXIsNext(result.data.xIsNext)
-                    } catch (err) {
-                        console.log(`No history ! ${err}`);
-                    }
-                }
-            // };
-            fetchData();
-        },1000)
-    },);
-
-
-
+    const [recordsUpdated, setRecordsUpdated] = useState('')
+    const [afterChangeRecords, setAfterChangeRecords] = useState(['hello', 'you'])
+    // const [ifRender, setIfRender] = useState(true);
 
 
 
     let status;
     const modalInText = (
         <div className='modal'>
-            <h2 id="simple-modal-title">Add your name to the records:</h2>
-            <p id="simple-modal-description">
-                write your and press send
-              </p>
-            <input onChange={(event) => setWinnerName(capitalize(event.target.value))} ></input>
-            <button onClick={() => { setAppearance(false); declareRecords(); jumpTo(0); setSeconds(0) }} >send</button>
-        </div>
+            <h2>Add your name to the records:</h2>
+            <p>write your name and press send</p>
+            <input onChange={event => setWinnerName(capitalize(event.target.value))}></input>
+            <button onClick={() => { declareRecords(); }} >send</button>
+        </div >
     );
+
+    let current = boardHistory[boardHistory.length - 1];
+    let winner = calculateWinner(current.squares);
+
+    if (winner) {
+        status = "Winner: " + winner;
+    } else {
+        status = "Next player: " + (xIsNext ? "X" : "O");
+    }
+
+    const moves = boardHistory.map((step, move) => {
+        const desc = move ?
+            'Go to move #' + move :
+            'Start new game';
+        return (
+            <li key={move}>
+                <button onClick={() => jumpTo(move)}>{desc}</button>
+            </li>
+        );
+    });
+
+
+
+    useEffect(() => {
+        if (winner) {
+            setIsActive(false);
+            setAppearance(true);
+        } else {
+            setAppearance(false);
+        }
+    }, [winner]);
+
+
+
+    useEffect(() => {
+        const updateWinnerList = async () => {
+            let afterChangeRecordsList = await axios.get('/api/v1/records')
+                .then(res => res.data)
+                .catch(error => error);
+            setAfterChangeRecords(afterChangeRecordsList);
+            let recordsListContainer = [];
+            afterChangeRecordsList.forEach(element => {
+                recordsListContainer.push(
+                    <li>
+                        <div>Name: {element.winnerName}</div>
+                        <div>Date: {element.date}</div>
+                        <div>Game duration: {element.gameDuration}s</div>
+                    </li>
+                )
+            });
+            setWinnersList(recordsListContainer)
+        }
+        updateWinnerList()
+
+    }, []);
+
+    useEffect(() => {
+        const updateWinnerList = async () => {
+            let afterChangeRecordsList = await axios.get('/api/v1/records')
+                .then(res => res.data)
+                .catch(error => error);
+            setAfterChangeRecords(afterChangeRecordsList);
+            let recordsListContainer = [];
+            afterChangeRecordsList.forEach(element => {
+                recordsListContainer.push(
+                    <li>
+                        <div>Name: {element.winnerName}</div>
+                        <div>Date: {element.date}</div>
+                        <div>Game duration: {element.gameDuration}s</div>
+                    </li>
+                )
+            });
+            setWinnersList(recordsListContainer)
+        }
+        updateWinnerList()
+
+    }, [winner, recordsUpdated]);
+
+    useEffect(() => {
+        const loadData = async () => {
+            const result = await axios.get(`/api/v1/history`);
+            setBoardHistory(result.data.boardHistory);
+            setStepNumber(result.data.stepNumber)
+            setXIsNext(result.data.xIsNext)
+        };
+        loadData();
+    }, []);
+
+    const fetchData = async () => {
+        const result = await axios.get(`/api/v1/history`);
+        // const updatedSeconds = await axios.put(`/api/v1/history`, { seconds })
+        if (winner) {
+            setIsActive(false);
+        } else if (stepNumber > 0 && !winner) { setIsActive(true) }
+        // setSeconds(updatedSeconds.data.seconds + 1)
+        setBoardHistory(result.data.boardHistory);
+        setStepNumber(result.data.stepNumber)
+        setXIsNext(result.data.xIsNext)
+    }
+
+    // useEffect(() => {
+    //     setTimeout(() => {
+
+
+    //         setRecordsUpdated(recordsUpdated + 1);
+    //     }, 500)
+    // });
+
+    useEffect(() => {
+        let interval = null;
+        if (!winner) {
+            interval = setInterval(() => {
+                fetchData();
+            }, 500);
+        }
+    }, [true]);
+
 
     const capitalize = (string) => {
         if (typeof string === typeof "") {
@@ -106,11 +158,8 @@ function App(props) {
 
     const jumpTo = (step) => {
         let localSeconds = seconds
-        if(step == 0 ){setIsActive(false); setSeconds(0); localSeconds = 0}
-        setStepNumber(step);
-        setXIsNext((step % 2) === 0)
-        setBoardHistory(boardHistory.slice(0, step + 1));
-        serverHistoryHandler({boardHistory:boardHistory.slice(0, step + 1), stepNumber:step, xIsNext:(step % 2) === 0,seconds:localSeconds})
+        if (step == 0) { setSeconds(0); localSeconds = 0 }
+        serverHistoryHandler({ boardHistory: boardHistory.slice(0, step + 1), stepNumber: step, xIsNext: (step % 2) === 0, seconds: localSeconds })
     }
 
     const formatDate = (date) => {
@@ -125,8 +174,7 @@ function App(props) {
     };
 
     const handleClick = (i) => {
-        if (stepNumber == 0) { setIsActive(true); jumpTo(0) }
-        setBoardHistory(boardHistory.slice(0, stepNumber + 1));
+        setIsActive(true)
         current = boardHistory[boardHistory.length - 1];
         let squares = current.squares.slice();
         if (calculateWinner(squares) || squares[i]) {
@@ -134,47 +182,30 @@ function App(props) {
         }
         squares[i] = xIsNext ? "x" : "o";
         let cloneHistory = boardHistory.slice();
-        setStepNumber(cloneHistory.length)
-        setBoardHistory(boardHistory.concat([{ squares }]))
-        setXIsNext(!xIsNext)
-        serverHistoryHandler({boardHistory:boardHistory.concat([{ squares }]), stepNumber:cloneHistory.length, xIsNext:!xIsNext,seconds:seconds})
+        serverHistoryHandler({ boardHistory: boardHistory.concat([{ squares }]), stepNumber: cloneHistory.length, xIsNext: !xIsNext, seconds: seconds + 1 })
     }
 
     const serverHistoryHandler = (infomation) => {
-        return axios.post('/api/history', infomation)
+        return axios.post('/api/v1/history', infomation)
             .then(res => res.data)
     }
 
-    const moves = boardHistory.map((step, move) => {
-        const desc = move ?
-            'Go to move #' + move :
-            'Start new game';
-        return (
-            <li key={move}>
-                <button onClick={() => { jumpTo(move) }}>{desc}</button>
-            </li>
-        );
-    });
-    try {
-        let trying = current.squares
-    } catch {
-        // window.location.reload(false);
-        current = boardHistory[boardHistory.length - 1];
-    }
-    const winner = calculateWinner(current.squares);
-  
     const declareRecords = async () => {
-        let recordsList = await axios.get('/api/records')
+        let recordsList = await axios.get('/api/v1/records')
             .then(res => res.data)
             .catch(error => error);
         let current = recordsList.length + 1;
+        debugger
+        if(recordsList[0].winnerName == "no body") {
+            current = recordsList.length
+        }
         let message = {
             "id": `${current}`,
             "winnerName": `${winnerName}`,
             "date": `${formatDate(new Date())}`,
             "gameDuration": `${seconds}`
         }
-        let afterChangeRecordsList = await axios.post('/api/records', message)
+        let afterChangeRecordsList = await axios.post('/api/v1/records', message)
             .then(res => res.data)
             .catch(error => error);
         let recordsListContainer = [];
@@ -187,14 +218,10 @@ function App(props) {
                 </li>
             )
         });
-        setWinnersListAppears(recordsListContainer)
-        serverHistoryHandler({boardHistory:[{ squares: Array(9).fill(null) }], stepNumber:0, xIsNext:true,seconds:seconds})
-    }
-
-    if (winner) {
-        status = "Winner: " + winner;
-    } else {
-        status = "Next player: " + (xIsNext ? "X" : "O");
+        serverHistoryHandler({ boardHistory: [{ squares: Array(9).fill(null) }], stepNumber: 0, xIsNext: true, seconds: seconds })
+        setWinnersList(recordsListContainer)
+        setAppearance(false);
+        setSeconds(0);
     }
 
     function calculateWinner(squares) {
@@ -219,7 +246,10 @@ function App(props) {
 
     return (
         <div className="game">
-            <div className="game-board">
+            <h1 className='headLine' >Tic Tac Toe</h1>
+            <p>Game timer: <CountTime isActive={isActive} seconds={seconds} setSeconds={setSeconds} /></p>
+            <div className='status' >{status}</div>
+            <div className='game-area'>
                 <Modal
                     open={appearance}
                     onClose={() => setAppearance(false)}
@@ -228,19 +258,22 @@ function App(props) {
                 >
                     {modalInText}
                 </Modal>
-                <p>Game timer: <CountTime isActive={isActive} seconds={seconds} setSeconds={setSeconds} /></p>
-                <Board
-                    squares={current.squares}
-                    onClick={(i) => handleClick(i)}
-                />
-            </div>
-            <div className="game-info">
-                <div>{status}</div>
-                <ol>{moves}</ol>
-                {typeof (winnersListAppears) !== typeof ('') &&
-                    <ol>
-                        <button onClick={async () => { await axios.delete('/api/records'); setWinnersListAppears('') }} >reset records least</button>
-                        {winnersListAppears}</ol>}
+                {/* {typeof (winnersList) !== typeof ('') &&
+                    <ol className='winnerList' >
+                        
+                        {winnersList}</ol>} */}
+                <WinnersList afterChangeRecordsList={afterChangeRecords} setRecordsUpdated={setRecordsUpdated} recordsUpdated={recordsUpdated}  />
+                <div className="game-board">
+                    <Board
+                        squares={current.squares}
+                        onClick={(i) => handleClick(i)}
+                    />
+                </div>
+                <div className="game-info">
+
+                    <ol className='moves' >{moves}</ol>
+                </div>
+
             </div>
         </div>
     );
